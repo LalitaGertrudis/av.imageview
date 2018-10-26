@@ -60,6 +60,8 @@ public class AVImageView extends TiUIView {
     private String brokenImage;
     private String contentMode;
 	private HashMap requestHeader;
+    private int overrideWidth;
+    private int overrideHeight;
 
     private RequestListener<String, GlideDrawable> requestListener;
 
@@ -72,6 +74,8 @@ public class AVImageView extends TiUIView {
         this.loadingIndicator = true;
         this.contentMode = ImageViewModule.CONTENT_MODE_ASPECT_FIT;
         this.memoryCache = true;
+        this.overrideWidth = 0;
+        this.overrideHeight = 0;
 
         //Setting up layout and imageview
         layout = new RelativeLayout(this.proxy.getActivity());
@@ -104,6 +108,8 @@ public class AVImageView extends TiUIView {
     public void processProperties(KrollDict d) {
         super.processProperties(d);
 
+        Log.d(LCAT, d.toString());
+
         if (d.containsKey("loadingIndicator"))
             this.setLoadingIndicator(d.getBoolean("loadingIndicator"));
         if (d.containsKey("enableMemoryCache"))
@@ -124,6 +130,17 @@ public class AVImageView extends TiUIView {
                 this.setSource(d.getString("image"));
             } else {
                 this.setBlob((TiBlob) uri);
+            }
+        }
+        if (d.containsKey("width") && d.containsKey("height")) {
+            Object _width = d.get("width");
+            Object _height = d.get("height");
+
+            if ((_width instanceof Integer) && (_height instanceof Integer)) {
+                this.overrideWidth = d.getInt("width");
+                this.overrideHeight = d.getInt("height");
+            } else {
+                Log.d(LCAT, "width and height not int");
             }
         }
     }
@@ -174,10 +191,13 @@ public class AVImageView extends TiUIView {
         	this.progressBar.setVisibility(View.VISIBLE);
 
 		//Switching between local and remote url
-		if (url.startsWith("file://"))
-			drawableRequest = Glide.with(this.proxy.getActivity().getBaseContext()).load(url);
-		else
-			drawableRequest = Glide.with(this.proxy.getActivity().getBaseContext()).load(GlideUrlBuilder.build(url, this.requestHeader));
+		if (url.startsWith("file://")) {
+            drawableRequest = Glide.with(this.proxy.getActivity().getBaseContext()).load(url);
+        }
+		else {
+            drawableRequest = Glide.with(this.proxy.getActivity().getBaseContext()).load(GlideUrlBuilder.build(url, this.requestHeader));
+        }
+			
 
 		//Handling GIF
 		if (this.getMimeType(url) != null && this.getMimeType(url) == "image/gif") {
@@ -203,6 +223,10 @@ public class AVImageView extends TiUIView {
 				.placeholder(defaultImageDrawable)
 				.error(brokenLinkImageDrawable)
 				.listener(requestListenerBuilder.createListener(url));
+
+            if (this.overrideWidth > 0 && this.overrideHeight > 0 ) {
+                drawableRequestBuilder.override(this.overrideWidth, this.overrideHeight);
+            }
 
 			if (this.roundedImage)
 				drawableRequestBuilder.transform(new GlideCircleTransform(this.proxy.getActivity().getBaseContext())).into(this.imageView);
