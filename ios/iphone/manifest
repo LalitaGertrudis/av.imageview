@@ -15,4 +15,4 @@ name: andreavitale-imageview
 moduleid: av.imageview
 guid: ddffa9fa-4366-40f0-9031-d32000a82138
 platform: iphone
-minsdk: 5.2.0.GA
+minsdk: 7.4.1.GA
